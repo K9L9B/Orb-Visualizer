@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Multi-Orb & Generative Visualization</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<button id="toggleSidebarBtn" class="toggle-sidebar-btn"><i class="fas fa-sliders-h"></i></button>
+<aside id="sidebar" class="sidebar shadow-xl">
+  <div class="sidebar-header">
+    <i class="fas fa-binoculars"></i> Global View
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Auto-Rotate View</label>
+    <input id="globalAutoRotate" type="checkbox" checked class="mx-2">
+    <input id="globalAutoRotateSpeed" type="range" min="0" max="0.08" step="0.001" value="0.027" class="slider-range mx-2" style="flex:2;">
+    <input id="globalAutoRotateSpeedNum" type="number" min="0" max="0.08" step="0.001" value="0.027" class="slider-number-input">
+  </div>
+   <div class="my-2 flex flex-row items-center">
+    <button id="resetView" class="bg-gradient-to-r from-sky-600 to-green-400 hover:from-green-400 hover:to-sky-600 text-center py-1 px-3 rounded shadow-md font-semibold text-gray-900">
+      <i class="fas fa-undo"></i> Reset View
+    </button>
+    <span class="ml-2 text-xs text-teal-300">Drag or pinch to rotate/zoom</span>
+  </div>
+  <hr class="my-2 border-gray-600">
+
+  <div class="sidebar-header">
+    <i class="fas fa-cubes"></i> Orb Management
+  </div>
+  <div class="slider-container flex items-center">
+    <label for="currentOrbSelector" class="slider-label">Current Orb:</label>
+    <select id="currentOrbSelector" class="slider-number-input flex-grow mr-2" style="min-width:0; width:auto;"></select>
+  </div>
+  <div class="grid grid-cols-2 gap-2 mb-2">
+    <button id="addOrbBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-2 rounded text-xs whitespace-nowrap">Add New</button>
+    <button id="duplicateOrbBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-2 rounded text-xs whitespace-nowrap">Duplicate</button>
+    <button id="removeOrbBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-xs whitespace-nowrap">Remove Current</button>
+    <button id="randomizeOrbBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded text-xs whitespace-nowrap"><i class="fas fa-random"></i> Randomize</button>
+  </div>
+  <hr class="my-2 border-gray-600">
+  
+  <div id="orbControlsHeader" class="sidebar-header">
+    <i class="fas fa-cube"></i> Orb 1 Controls
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Perspective</label>
+    <input id="perspective" type="range" min="0" max="4.2" step="0.01" value="2.0" class="slider-range mx-3">
+    <input id="perspectiveNum" type="number" min="0" max="4.2" step="0.01" value="2.0" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Dot Count</label>
+    <input id="dotCount" type="range" min="50" max="10000" step="10" value="1000" class="slider-range mx-3">
+    <input id="dotCountNum" type="number" min="50" max="10000" step="10" value="1000" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Dot Size</label>
+    <input id="dotSize" type="range" min="1" max="20" value="4" class="slider-range mx-3">
+    <input id="dotSizeNum" type="number" min="1" max="20" step="1" value="4" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Dot Opacity</label>
+    <input id="dotAlpha" type="range" min="0.01" max="1" step="0.01" value="0.82" class="slider-range mx-3">
+    <input id="dotAlphaNum" type="number" min="0.01" max="1" step="0.01" value="0.82" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Position X</label>
+    <input id="positionX" type="range" min="-1000" max="1000" step="1" value="0" class="slider-range mx-3">
+    <input id="positionXNum" type="number" min="-1000" max="1000" step="1" value="0" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Position Y</label>
+    <input id="positionY" type="range" min="-1000" max="1000" step="1" value="0" class="slider-range mx-3">
+    <input id="positionYNum" type="number" min="-1000" max="1000" step="1" value="0" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Trail</label>
+    <input id="trailEffect" type="checkbox" class="mr-2">
+    <span style="margin-left:0.36em;font-size:1em;"><i id="trailIcon" class="fas fa-slash"></i></span>
+  </div>
+  <div class="slider-container flex items-center" id="trailAlphaContainer" style="display:none;">
+    <label class="slider-label">Trail Fade</label>
+    <input id="trailAlpha" type="range" min="0.01" max="0.99" step="0.01" value="0.17" class="slider-range mx-3">
+    <input id="trailAlphaNum" type="number" min="0.01" max="0.99" step="0.01" value="0.17" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Color Mode</label>
+    <select id="colorMode" class="ml-2">
+      <option value="solid">Solid</option>
+      <option value="gradient">Gradient</option>
+      <option value="rainbow">Rainbow</option>
+    </select>
+  </div>
+  <div class="slider-container flex items-center" id="dotColorRow">
+    <label class="slider-label">Dot Color</label>
+    <input type="color" id="dotColor1" value="#2cffba" class="input-color">
+    <input type="color" id="dotColor2" value="#22a7f7" class="input-color" style="display: none;">
+  </div>
+  <hr class="my-2 border-gray-600">
+  <div id="lissajousPatternHeader" class="sidebar-header" style="margin-bottom:7px;">
+    <i class="fas fa-wave-square"></i> Orb 1 Lissajous Pattern
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Frequency X</label>
+    <input id="freqX" type="range" min="1" max="100" step="0.1" value="4" class="slider-range mx-3">
+    <input id="freqXNum" type="number" min="1" max="100" step="0.1" value="4" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Frequency Y</label>
+    <input id="freqY" type="range" min="1" max="100" step="0.1" value="5" class="slider-range mx-3">
+    <input id="freqYNum" type="number" min="1" max="100" step="0.1" value="5" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Frequency Z</label>
+    <input id="freqZ" type="range" min="1" max="100" step="0.1" value="6" class="slider-range mx-3">
+    <input id="freqZNum" type="number" min="1" max="100" step="0.1" value="6" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Phase X</label>
+    <input id="phaseX" type="range" min="0" max="6.28" step="0.01" value="0" class="slider-range mx-3">
+    <input id="phaseXNum" type="number" min="0" max="6.28" step="0.01" value="0" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Phase Y</label>
+    <input id="phaseY" type="range" min="0" max="6.28" step="0.01" value="1" class="slider-range mx-3">
+    <input id="phaseYNum" type="number" min="0" max="6.28" step="0.01" value="1" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Phase Z</label>
+    <input id="phaseZ" type="range" min="0" max="6.28" step="0.01" value="2.6" class="slider-range mx-3">
+    <input id="phaseZNum" type="number" min="0" max="6.28" step="0.01" value="2.6" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Amplitude X</label>
+    <input id="amplX" type="range" min="0.5" max="1.45" step="0.01" value="1.10" class="slider-range mx-3">
+    <input id="amplXNum" type="number" min="0.5" max="1.45" step="0.01" value="1.10" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Amplitude Y</label>
+    <input id="amplY" type="range" min="0.5" max="1.45" step="0.01" value="1.08" class="slider-range mx-3">
+    <input id="amplYNum" type="number" min="0.5" max="1.45" step="0.01" value="1.08" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Amplitude Z</label>
+    <input id="amplZ" type="range" min="0.5" max="1.45" step="0.01" value="1.07" class="slider-range mx-3">
+    <input id="amplZNum" type="number" min="0.5" max="1.45" step="0.01" value="1.07" class="slider-number-input">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Pattern Speed</label>
+    <input id="patternSpeed" type="range" min="0.01" max="2.0" step="0.01" value="0.19" class="slider-range mx-3">
+    <input id="patternSpeedNum" type="number" min="0.01" max="2.0" step="0.01" value="0.19" class="slider-number-input">
+  </div>
+  
+  <hr class="my-2 border-gray-600">
+  <div id="generativeModeHeader" class="sidebar-header" style="margin-bottom:7px;">
+    <i class="fas fa-magic"></i> Orb 1 Generative Mode
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Enable Evolution</label>
+    <input id="orbIsEvolving" type="checkbox" class="mx-2">
+  </div>
+  <div class="slider-container flex items-center">
+    <label class="slider-label">Evolution Speed</label>
+    <input id="orbEvolutionSpeed" type="range" min="0.001" max="0.1" step="0.001" value="0.01" class="slider-range mx-3">
+    <input id="orbEvolutionSpeedNum" type="number" min="0.001" max="0.1" step="0.001" value="0.01" class="slider-number-input">
+  </div>
+  <div class="text-xs text-gray-400 mb-2 ml-1">Evolves Frequencies & Phases by default.</div>
+  <div class="text-sm text-gray-200 mb-1 ml-1">Also Evolve:</div>
+  <div class="grid grid-cols-2 gap-x-3 gap-y-1 mb-2 ml-1 text-xs">
+    <div><input type="checkbox" id="evolveAmplitudes" class="mr-1"><label for="evolveAmplitudes">Amplitudes</label></div>
+    <div><input type="checkbox" id="evolveAppearance" class="mr-1"><label for="evolveAppearance">Appearance</label></div>
+    <div><input type="checkbox" id="evolveColors" class="mr-1"><label for="evolveColors">Colors</label></div>
+    <div><input type="checkbox" id="evolvePerspective" class="mr-1"><label for="evolvePerspective">Perspective</label></div>
+  </div>
+
+
+  <hr class="my-2 border-gray-600">
+  <div class="sidebar-header" style="margin-bottom:7px;">
+    <i class="fas fa-save"></i> Scene Presets & Sharing
+  </div>
+  <div class="flex items-center mb-2">
+    <input type="text" id="presetName" placeholder="Preset Name" class="slider-number-input flex-grow mr-2">
+    <button id="savePresetBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-sm">Save</button>
+  </div>
+  <div class="flex items-center mb-2">
+    <select id="presetList" class="slider-number-input flex-grow mr-2" style="min-width:0; width:auto;"></select>
+    <button id="loadPresetBtn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded text-sm mr-1">Load</button>
+    <button id="deletePresetBtn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm">Del</button>
+  </div>
+  <div class="flex items-center mb-2">
+    <button id="shareBtn" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-1 px-2 rounded text-sm mr-2">Copy Share URL</button>
+    <button id="exportPngBtn" class="bg-teal-500 hover:bg-teal-700 text-white font-bold py-1 px-2 rounded text-sm"><i class="fas fa-camera"></i> Export PNG</button>
+    <span id="shareMessage" class="ml-2 text-xs text-teal-300"></span>
+  </div>
+
+</aside>
+<canvas id="orb-canvas"></canvas>
+<script src="script.js"></script>
+</body>
+</html>

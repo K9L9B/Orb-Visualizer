@@ -1,0 +1,156 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #181c25;
+  font-family: 'Roboto', Arial, sans-serif;
+  color: #eee;
+  overscroll-behavior: none;
+}
+#orb-canvas {
+  display: block;
+  background: linear-gradient(140deg, #0a1538 0%, #181c25 95%);
+  width: 100vw;
+  height: 100vh;
+  touch-action: none;
+}
+.slider-label {
+  font-size: 0.95em;
+  color: #fafafa;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+.slider-value {
+  font-size: 1em;
+  min-width: 2.5rem;
+  text-align: right;
+  color: #222;
+  background: #fafafa;
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-left: 0.5em;
+}
+.slider-number-input {
+  font-size: 1em;
+  min-width: 60px;
+  max-width: 70px;
+  margin-left: 0.5em;
+  padding: 2px 8px;
+  background: #fafafa;
+  color: #212c34;
+  border: 1.5px solid #2d3e52;
+  border-radius: 5px;
+  text-align: right;
+  outline: none;
+}
+.slider-number-input:focus {
+  outline: 1.5px solid #34f1b6;
+}
+/* Ensure preset name input and select can grow */
+#presetName, #presetList {
+    max-width: none; /* Override default max-width for these specific inputs */
+}
+.slider-container {
+  margin-bottom: 1.1em;
+}
+.sidebar {
+  width: 340px;
+  max-width: 88vw;
+  background: rgba(23,29,45,0.93);
+  border-radius: 16px;
+  backdrop-filter: blur(8px);
+  box-shadow: 2px 0 30px 0 rgba(10,10,20,0.13);
+  padding: 18px 20px 22px 16px;
+  z-index: 20;
+  height: auto;
+  min-height: 60svh;
+  max-height: 95svh;
+  overflow-y: auto;
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+.sidebar-header {
+  font-size: 1.15em;
+  font-weight: 700;
+  letter-spacing: .03em;
+  color: #6ee7b7;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 0.57em;
+}
+.toggle-sidebar-btn {
+  position: fixed;
+  left: 12px;
+  top: 18px;
+  z-index: 30;
+  background: #25355b;
+  color: #72f7d6;
+  border: none;
+  border-radius: 50%;
+  padding: 0.55em 0.68em;
+  font-size: 1.5em;
+  cursor: pointer;
+  box-shadow: 0 2px 16px 0 rgba(40,220,180,0.10);
+  transition: background .2s;
+}
+.toggle-sidebar-btn:hover,
+.toggle-sidebar-btn:focus {
+  background: #1d263c;
+}
+@media (max-width: 500px) {
+  .sidebar {
+    padding: 14px 8px 16px 6px;
+    min-width: 54vw;
+    font-size: 0.96em;
+  }
+  .slider-label { font-size: 0.95em;}
+  .sidebar-header { font-size: 1em;}
+  .toggle-sidebar-btn {
+    left: 6px; top: 7px; font-size: 1.13em;
+  }
+}
+.input-color {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  border: 3px solid #222637;
+  margin-right: 0.6em;
+  margin-left: 0.1em;
+  background: #eee;
+  cursor: pointer;
+  position: relative;
+  top: 2.5px;
+}
+::-webkit-scrollbar {
+  width: 9px;
+  background: #263049;
+  border-radius: 18px;
+}
+::-webkit-scrollbar-thumb {
+  background: #142135c8;
+  border-radius: 18px;
+}
+.slider-range {
+  accent-color: #34f1b6;
+  width: 100%;
+}
+select, input[type="number"] {
+  border-radius: 5px;
+  background: #fafafa;
+  color: #212c34;
+  border: 1.5px solid #2d3e52;
+  padding: 3px 7px;
+  font-size: 1em;
+  min-width: 60px;
+  margin-left: 0.5em;
+}
+select:focus, input:focus { outline: 1.5px solid #34f1b6;}
+.trail-tip {
+  font-size: 0.91em;
+  color: #a2e1e0;
+  margin-top: -0.59em;
+  margin-bottom: 0.43em;
+  margin-left: 2.2em;
+}
