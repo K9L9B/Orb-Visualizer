@@ -102,57 +102,129 @@
   </div>
   <hr class="my-2 border-gray-600">
   <div id="lissajousPatternHeader" class="sidebar-header" style="margin-bottom:7px;">
-    <i class="fas fa-wave-square"></i> Orb 1 Lissajous Pattern
+    <i class="fas fa-wave-square"></i> Orb Pattern Controls
   </div>
   <div class="slider-container flex items-center">
-    <label class="slider-label">Frequency X</label>
-    <input id="freqX" type="range" min="1" max="100" step="0.1" value="4" class="slider-range mx-3">
-    <input id="freqXNum" type="number" min="1" max="100" step="0.1" value="4" class="slider-number-input">
+    <label class="slider-label">Pattern Type</label>
+    <select id="patternType" class="ml-2">
+      <option value="lissajous">Lissajous</option>
+      <option value="coxeter">Coxeter</option>
+    </select>
   </div>
-  <div class="slider-container flex items-center">
-    <label class="slider-label">Frequency Y</label>
-    <input id="freqY" type="range" min="1" max="100" step="0.1" value="5" class="slider-range mx-3">
-    <input id="freqYNum" type="number" min="1" max="100" step="0.1" value="5" class="slider-number-input">
+  
+  <!-- Coxeter Group Controls (shown when patternType is 'coxeter') -->
+  <div id="coxeterControls" style="display: none;">
+    <div class="slider-container flex items-center">
+      <label class="slider-label">Coxeter Group</label>
+      <select id="coxeterGroup" class="ml-2">
+        <option value="A3">A₃ (Tetrahedral)</option>
+        <option value="B3">B₃ (Cubic)</option>
+        <option value="H3">H₃ (Icosahedral)</option>
+      </select>
+    </div>
+    <!-- Base Coxeter Controls -->
+    <div class="slider-container flex items-center">
+      <label class="slider-label">Pattern Speed</label>
+      <input id="coxeterSpeed" type="range" min="0.01" max="2.0" step="0.01" value="0.2" class="slider-range mx-3">
+      <input id="coxeterSpeedNum" type="number" min="0.01" max="2.0" step="0.01" value="0.2" class="slider-number-input">
+    </div>
+    <div class="slider-container flex items-center">
+      <label class="slider-label">Base Amplitude</label>
+      <input id="coxeterAmplitude" type="range" min="0.1" max="2.0" step="0.1" value="1.0" class="slider-range mx-3">
+      <input id="coxeterAmplitudeNum" type="number" min="0.1" max="2.0" step="0.1" value="1.0" class="slider-number-input">
+    </div>
+    <div class="slider-container flex items-center">
+      <label class="slider-label">Root Rotation</label>
+      <input id="rootRotation" type="range" min="0" max="6.28" step="0.01" value="0" class="slider-range mx-3">
+      <input id="rootRotationNum" type="number" min="0" max="6.28" step="0.01" value="0" class="slider-number-input">
+    </div>
+
+    <!-- B3 (Cubic) Specific Controls -->
+    <div id="b3Controls" style="display: none;">
+      <div class="slider-container flex items-center">
+        <label class="slider-label">Vertex Weight</label>
+        <input id="cubicVertexWeight" type="range" min="0" max="1" step="0.01" value="0.5" class="slider-range mx-3">
+        <input id="cubicVertexWeightNum" type="number" min="0" max="1" step="0.01" value="0.5" class="slider-number-input">
+      </div>
+      <div class="slider-container flex items-center">
+        <label class="slider-label">Edge Flow</label>
+        <input id="cubicEdgeFlow" type="range" min="0" max="2" step="0.01" value="1.0" class="slider-range mx-3">
+        <input id="cubicEdgeFlowNum" type="number" min="0" max="2" step="0.01" value="1.0" class="slider-number-input">
+      </div>
+    </div>
+
+    <!-- H3 (Icosahedral) Specific Controls -->
+    <div id="h3Controls" style="display: none;">
+      <div class="slider-container flex items-center">
+        <label class="slider-label">Golden Ratio</label>
+        <input id="goldenRatioWeight" type="range" min="0.5" max="2.0" step="0.01" value="1.618" class="slider-range mx-3">
+        <input id="goldenRatioWeightNum" type="number" min="0.5" max="2.0" step="0.01" value="1.618" class="slider-number-input">
+      </div>
+      <div class="slider-container flex items-center">
+        <label class="slider-label">Vertex Flow</label>
+        <input id="icoVertexFlow" type="range" min="0" max="2" step="0.01" value="1.0" class="slider-range mx-3">
+        <input id="icoVertexFlowNum" type="number" min="0" max="2" step="0.01" value="1.0" class="slider-number-input">
+      </div>
+      <div class="slider-container flex items-center">
+        <label class="slider-label">Face Weight</label>
+        <input id="icoFaceWeight" type="range" min="0" max="1" step="0.01" value="0.5" class="slider-range mx-3">
+        <input id="icoFaceWeightNum" type="number" min="0" max="1" step="0.01" value="0.5" class="slider-number-input">
+      </div>
+    </div>
   </div>
-  <div class="slider-container flex items-center">
-    <label class="slider-label">Frequency Z</label>
-    <input id="freqZ" type="range" min="1" max="100" step="0.1" value="6" class="slider-range mx-3">
-    <input id="freqZNum" type="number" min="1" max="100" step="0.1" value="6" class="slider-number-input">
-  </div>
-  <div class="slider-container flex items-center">
-    <label class="slider-label">Phase X</label>
-    <input id="phaseX" type="range" min="0" max="6.28" step="0.01" value="0" class="slider-range mx-3">
-    <input id="phaseXNum" type="number" min="0" max="6.28" step="0.01" value="0" class="slider-number-input">
-  </div>
-  <div class="slider-container flex items-center">
-    <label class="slider-label">Phase Y</label>
-    <input id="phaseY" type="range" min="0" max="6.28" step="0.01" value="1" class="slider-range mx-3">
-    <input id="phaseYNum" type="number" min="0" max="6.28" step="0.01" value="1" class="slider-number-input">
-  </div>
-  <div class="slider-container flex items-center">
-    <label class="slider-label">Phase Z</label>
-    <input id="phaseZ" type="range" min="0" max="6.28" step="0.01" value="2.6" class="slider-range mx-3">
-    <input id="phaseZNum" type="number" min="0" max="6.28" step="0.01" value="2.6" class="slider-number-input">
-  </div>
-  <div class="slider-container flex items-center">
-    <label class="slider-label">Amplitude X</label>
-    <input id="amplX" type="range" min="0.5" max="1.45" step="0.01" value="1.10" class="slider-range mx-3">
-    <input id="amplXNum" type="number" min="0.5" max="1.45" step="0.01" value="1.10" class="slider-number-input">
-  </div>
-  <div class="slider-container flex items-center">
-    <label class="slider-label">Amplitude Y</label>
-    <input id="amplY" type="range" min="0.5" max="1.45" step="0.01" value="1.08" class="slider-range mx-3">
-    <input id="amplYNum" type="number" min="0.5" max="1.45" step="0.01" value="1.08" class="slider-number-input">
-  </div>
-  <div class="slider-container flex items-center">
-    <label class="slider-label">Amplitude Z</label>
-    <input id="amplZ" type="range" min="0.5" max="1.45" step="0.01" value="1.07" class="slider-range mx-3">
-    <input id="amplZNum" type="number" min="0.5" max="1.45" step="0.01" value="1.07" class="slider-number-input">
-  </div>
-  <div class="slider-container flex items-center">
-    <label class="slider-label">Pattern Speed</label>
-    <input id="patternSpeed" type="range" min="0.01" max="2.0" step="0.01" value="0.19" class="slider-range mx-3">
-    <input id="patternSpeedNum" type="number" min="0.01" max="2.0" step="0.01" value="0.19" class="slider-number-input">
+
+  <!-- Lissajous Controls (original controls, shown when patternType is 'lissajous') -->
+  <div id="lissajousControls">
+    <div class="slider-container flex items-center">
+      <label class="slider-label">Frequency X</label>
+      <input id="freqX" type="range" min="1" max="100" step="0.1" value="4" class="slider-range mx-3">
+      <input id="freqXNum" type="number" min="1" max="100" step="0.1" value="4" class="slider-number-input">
+    </div>
+    <div class="slider-container flex items-center">
+      <label class="slider-label">Frequency Y</label>
+      <input id="freqY" type="range" min="1" max="100" step="0.1" value="5" class="slider-range mx-3">
+      <input id="freqYNum" type="number" min="1" max="100" step="0.1" value="5" class="slider-number-input">
+    </div>
+    <div class="slider-container flex items-center">
+      <label class="slider-label">Frequency Z</label>
+      <input id="freqZ" type="range" min="1" max="100" step="0.1" value="6" class="slider-range mx-3">
+      <input id="freqZNum" type="number" min="1" max="100" step="0.1" value="6" class="slider-number-input">
+    </div>
+    <div class="slider-container flex items-center">
+      <label class="slider-label">Phase X</label>
+      <input id="phaseX" type="range" min="0" max="6.28" step="0.01" value="0" class="slider-range mx-3">
+      <input id="phaseXNum" type="number" min="0" max="6.28" step="0.01" value="0" class="slider-number-input">
+    </div>
+    <div class="slider-container flex items-center">
+      <label class="slider-label">Phase Y</label>
+      <input id="phaseY" type="range" min="0" max="6.28" step="0.01" value="1" class="slider-range mx-3">
+      <input id="phaseYNum" type="number" min="0" max="6.28" step="0.01" value="1" class="slider-number-input">
+    </div>
+    <div class="slider-container flex items-center">
+      <label class="slider-label">Phase Z</label>
+      <input id="phaseZ" type="range" min="0" max="6.28" step="0.01" value="2.6" class="slider-range mx-3">
+      <input id="phaseZNum" type="number" min="0" max="6.28" step="0.01" value="2.6" class="slider-number-input">
+    </div>
+    <div class="slider-container flex items-center">
+      <label class="slider-label">Amplitude X</label>
+      <input id="amplX" type="range" min="0.5" max="1.45" step="0.01" value="1.10" class="slider-range mx-3">
+      <input id="amplXNum" type="number" min="0.5" max="1.45" step="0.01" value="1.10" class="slider-number-input">
+    </div>
+    <div class="slider-container flex items-center">
+      <label class="slider-label">Amplitude Y</label>
+      <input id="amplY" type="range" min="0.5" max="1.45" step="0.01" value="1.08" class="slider-range mx-3">
+      <input id="amplYNum" type="number" min="0.5" max="1.45" step="0.01" value="1.08" class="slider-number-input">
+    </div>
+    <div class="slider-container flex items-center">
+      <label class="slider-label">Amplitude Z</label>
+      <input id="amplZ" type="range" min="0.5" max="1.45" step="0.01" value="1.07" class="slider-range mx-3">
+      <input id="amplZNum" type="number" min="0.5" max="1.45" step="0.01" value="1.07" class="slider-number-input">
+    </div>
+    <div class="slider-container flex items-center">
+      <label class="slider-label">Pattern Speed</label>
+      <input id="patternSpeed" type="range" min="0.01" max="2.0" step="0.01" value="0.19" class="slider-range mx-3">
+      <input id="patternSpeedNum" type="number" min="0.01" max="2.0" step="0.01" value="0.19" class="slider-number-input">
+    </div>
   </div>
   
   <hr class="my-2 border-gray-600">

@@ -73,6 +73,19 @@ const defaultOrbParamsTemplate = {
   // Add position properties to the default orb parameters
   positionX: 0,
   positionY: 0,
+  // Coxeter pattern parameters
+  patternType: 'lissajous', // 'lissajous', 'coxeter', 'weyl'
+  coxeterGroup: 'A3',  // 'A3', 'B3', 'D4', 'F4', 'H3'
+  coxeterSpeed: 0.2,
+  coxeterAmplitude: 1.0,
+  rootRotation: 0,
+  // B3 (Cubic) parameters
+  cubicVertexWeight: 0.5,
+  cubicEdgeFlow: 1.0,
+  // H3 (Icosahedral) parameters
+  goldenRatioWeight: 1.618,
+  icoVertexFlow: 1.0,
+  icoFaceWeight: 0.5,
 };
 
 // List of all range/number input pairs for orb parameters
@@ -93,7 +106,18 @@ const orbPairedControls = [
   { base: 'amplZ', digits: 2, type: 'number' },
   { base: 'patternSpeed', digits: 2, type: 'number' },
   // Evolution controls
-  { base: 'orbEvolutionSpeed', digits: 3, type: 'number'}
+  { base: 'orbEvolutionSpeed', digits: 3, type: 'number'},
+  // Coxeter controls
+  { base: 'coxeterSpeed', digits: 2, type: 'number' },
+  { base: 'coxeterAmplitude', digits: 1, type: 'number' },
+  { base: 'rootRotation', digits: 2, type: 'number' },
+  // B3 (Cubic) controls
+  { base: 'cubicVertexWeight', digits: 2, type: 'number' },
+  { base: 'cubicEdgeFlow', digits: 2, type: 'number' },
+  // H3 (Icosahedral) controls
+  { base: 'goldenRatioWeight', digits: 2, type: 'number' },
+  { base: 'icoVertexFlow', digits: 2, type: 'number' },
+  { base: 'icoFaceWeight', digits: 2, type: 'number' }
 ];
 
 const orbSingleControls = [ // For checkboxes, selects, colors for orbs
@@ -105,7 +129,9 @@ const orbSingleControls = [ // For checkboxes, selects, colors for orbs
     { id: 'evolveAmplitudes', paramKey: 'evolveAmplitudes', type: 'checkbox'},
     { id: 'evolveAppearance', paramKey: 'evolveAppearance', type: 'checkbox'},
     { id: 'evolveColors', paramKey: 'evolveColors', type: 'checkbox'},
-    { id: 'evolvePerspective', paramKey: 'evolvePerspective', type: 'checkbox'}
+    { id: 'evolvePerspective', paramKey: 'evolvePerspective', type: 'checkbox'},
+    { id: 'patternType', paramKey: 'patternType', type: 'select'},
+    { id: 'coxeterGroup', paramKey: 'coxeterGroup', type: 'select'},
 ];
 
 
@@ -252,6 +278,115 @@ function setupOrbControlsListeners() {
     orbs[currentOrbIndex].positionY = parseFloat(this.value);
     renderOrbs(); // Ensure the visualization updates
   });
+
+  // Add Coxeter group control listeners
+  dom('coxeterGroup').addEventListener('change', function() {
+    orbs[currentOrbIndex].coxeterGroup = this.value;
+    // Show/hide group-specific controls
+    dom('b3Controls').style.display = this.value === 'B3' ? 'block' : 'none';
+    dom('h3Controls').style.display = this.value === 'H3' ? 'block' : 'none';
+    buildDotsForOrb(orbs[currentOrbIndex]);
+  });
+
+  // Add B3 (Cubic) control listeners
+  ['cubicVertexWeight', 'cubicEdgeFlow'].forEach(param => {
+    const slider = dom(param);
+    const numInput = dom(param + 'Num');
+
+    slider.addEventListener('input', function() {
+      numInput.value = this.value;
+      orbs[currentOrbIndex][param] = parseFloat(this.value);
+      buildDotsForOrb(orbs[currentOrbIndex]);
+    });
+
+    numInput.addEventListener('input', function() {
+      slider.value = this.value;
+      orbs[currentOrbIndex][param] = parseFloat(this.value);
+      buildDotsForOrb(orbs[currentOrbIndex]);
+    });
+  });
+
+  // Add H3 (Icosahedral) control listeners
+  ['goldenRatioWeight', 'icoVertexFlow', 'icoFaceWeight'].forEach(param => {
+    const slider = dom(param);
+    const numInput = dom(param + 'Num');
+
+    slider.addEventListener('input', function() {
+      numInput.value = this.value;
+      orbs[currentOrbIndex][param] = parseFloat(this.value);
+      buildDotsForOrb(orbs[currentOrbIndex]);
+    });
+
+    numInput.addEventListener('input', function() {
+      slider.value = this.value;
+      orbs[currentOrbIndex][param] = parseFloat(this.value);
+      buildDotsForOrb(orbs[currentOrbIndex]);
+    });
+  });
+
+  // Add pattern type control listener
+  dom('patternType').addEventListener('change', function() {
+    const isCoxeter = this.value === 'coxeter';
+    dom('coxeterControls').style.display = isCoxeter ? 'block' : 'none';
+    dom('lissajousControls').style.display = isCoxeter ? 'none' : 'block';
+    
+    if (isCoxeter) {
+      const group = dom('coxeterGroup').value;
+      dom('b3Controls').style.display = group === 'B3' ? 'block' : 'none';
+      dom('h3Controls').style.display = group === 'H3' ? 'block' : 'none';
+    }
+    
+    orbs[currentOrbIndex].patternType = this.value;
+    if (isCoxeter) {
+      orbs[currentOrbIndex].coxeterGroup = dom('coxeterGroup').value;
+      buildDotsForOrb(orbs[currentOrbIndex]);
+    }
+  });
+
+  // Add Coxeter group control listeners
+  dom('coxeterGroup').addEventListener('change', function() {
+    orbs[currentOrbIndex].coxeterGroup = this.value;
+    // Show/hide group-specific controls
+    dom('b3Controls').style.display = this.value === 'B3' ? 'block' : 'none';
+    dom('h3Controls').style.display = this.value === 'H3' ? 'block' : 'none';
+    buildDotsForOrb(orbs[currentOrbIndex]);
+  });
+
+  // Add B3 (Cubic) control listeners
+  ['cubicVertexWeight', 'cubicEdgeFlow'].forEach(param => {
+    const slider = dom(param);
+    const numInput = dom(param + 'Num');
+
+    slider.addEventListener('input', function() {
+      numInput.value = this.value;
+      orbs[currentOrbIndex][param] = parseFloat(this.value);
+      buildDotsForOrb(orbs[currentOrbIndex]);
+    });
+
+    numInput.addEventListener('input', function() {
+      slider.value = this.value;
+      orbs[currentOrbIndex][param] = parseFloat(this.value);
+      buildDotsForOrb(orbs[currentOrbIndex]);
+    });
+  });
+
+  // Add H3 (Icosahedral) control listeners
+  ['goldenRatioWeight', 'icoVertexFlow', 'icoFaceWeight'].forEach(param => {
+    const slider = dom(param);
+    const numInput = dom(param + 'Num');
+
+    slider.addEventListener('input', function() {
+      numInput.value = this.value;
+      orbs[currentOrbIndex][param] = parseFloat(this.value);
+      buildDotsForOrb(orbs[currentOrbIndex]);
+    });
+
+    numInput.addEventListener('input', function() {
+      slider.value = this.value;
+      orbs[currentOrbIndex][param] = parseFloat(this.value);
+      buildDotsForOrb(orbs[currentOrbIndex]);
+    });
+  });
 }
 
 // Ensure position properties are part of the default orb parameters
@@ -296,6 +431,7 @@ function syncCurrentOrbParamsFromUI() {
 function updateUIForOrb(orbInstance) {
     if (!orbInstance) return;
 
+    // Update all paired controls
     orbPairedControls.forEach(({ base, digits }) => {
         const elSlider = dom(base);
         const elNum = dom(base + 'Num');
@@ -314,6 +450,7 @@ function updateUIForOrb(orbInstance) {
         updateSliderDisplay(base, valueToSet, digits);
     });
 
+    // Update single controls
     orbSingleControls.forEach(({ id, paramKey, type }) => {
         const el = dom(id);
         if (el && orbInstance.hasOwnProperty(paramKey)) {
@@ -324,6 +461,7 @@ function updateUIForOrb(orbInstance) {
             }
         }
     });
+    
     // Specific UI updates based on loaded orb params
     dom("dotColor2").style.display = (orbInstance.colorMode === "gradient") ? "" : "none";
     dom("trailAlphaContainer").style.display = orbInstance.trail ? "" : "none";
@@ -338,10 +476,45 @@ function updateUIForOrb(orbInstance) {
     // Update position controls
     dom('positionX').value = orbInstance.positionX;
     dom('positionXNum').value = orbInstance.positionX;
-
     dom('positionY').value = orbInstance.positionY;
     dom('positionYNum').value = orbInstance.positionY;
 
+    // Update pattern type and related controls
+    if (orbInstance.patternType) {
+        dom('patternType').value = orbInstance.patternType;
+        const isCoxeter = orbInstance.patternType === 'coxeter';
+        dom('coxeterControls').style.display = isCoxeter ? 'block' : 'none';
+        dom('lissajousControls').style.display = isCoxeter ? 'none' : 'block';
+
+        if (isCoxeter) {
+            // Show/hide group-specific controls
+            const group = orbInstance.coxeterGroup || 'A3';
+            dom('coxeterGroup').value = group;
+            dom('b3Controls').style.display = group === 'B3' ? 'block' : 'none';
+            dom('h3Controls').style.display = group === 'H3' ? 'block' : 'none';
+
+            // Set Coxeter control values if they exist
+            const coxeterControls = [
+                { key: 'coxeterSpeed', default: 0.2 },
+                { key: 'coxeterAmplitude', default: 1.0 },
+                { key: 'rootRotation', default: 0 },
+                { key: 'cubicVertexWeight', default: 0.5 },
+                { key: 'cubicEdgeFlow', default: 1.0 },
+                { key: 'goldenRatioWeight', default: 1.618 },
+                { key: 'icoVertexFlow', default: 1.0 },
+                { key: 'icoFaceWeight', default: 0.5 }
+            ];
+
+            coxeterControls.forEach(({ key, default: defaultValue }) => {
+                const value = orbInstance[key] || defaultValue;
+                const slider = dom(key);
+                const numInput = dom(key + 'Num');
+                if (slider) slider.value = value;
+                if (numInput) numInput.value = value;
+            });
+        }
+    }
+    
     // Update header for current orb
     updateSidebarOrbHeaders();
 }
@@ -440,18 +613,178 @@ function rgbObjToString(c, a = 1) { /* ... (same as before) ... */ return `rgba(
 function hsvToRgb(h, s, v) { /* ... (same as before) ... */ let f=(n,k=(n+h*6)%6)=>v-v*s*Math.max(Math.min(k,4-k,1),0);return{r:Math.round(f(5)*255),g:Math.round(f(3)*255),b:Math.round(f(1)*255)};}
 
 
+// Root system generators for different Coxeter groups
+function generateRootSystem(group, n = 1000) {
+    const roots = [];
+    
+    // Helper function to normalize a point to the unit sphere
+    const normalize = (point) => {
+        const length = Math.sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
+        return {
+            x: point.x / length,
+            y: point.y / length,
+            z: point.z / length
+        };
+    };
+
+    // Helper for spherical fibonacci distribution
+    const fibonacciSphere = (samples, jitter = 0) => {
+        const points = [];
+        const phi = Math.PI * (3 - Math.sqrt(5)); // golden angle in radians
+        
+        for (let i = 0; i < samples; i++) {
+            const y = 1 - (i / (samples - 1)) * 2; // y goes from 1 to -1
+            const radius = Math.sqrt(1 - y * y); // radius at y
+            const theta = phi * i; // golden angle increment
+            
+            // Add some controlled randomness if jitter > 0
+            const randTheta = theta + (jitter * (Math.random() - 0.5));
+            const randY = y + (jitter * (Math.random() - 0.5) * 0.1);
+            
+            points.push({
+                x: Math.cos(randTheta) * radius,
+                y: randY,
+                z: Math.sin(randTheta) * radius
+            });
+        }
+        return points.map(normalize);
+    };
+
+    // Helper for cube face point distribution
+    const generateCubeFacePoints = (n, vertexWeight, edgeFlow) => {
+        const points = [];
+        const faces = [
+            { center: { x: 1, y: 0, z: 0 }, up: { x: 0, y: 1, z: 0 }, right: { x: 0, y: 0, z: 1 } },
+            { center: { x: -1, y: 0, z: 0 }, up: { x: 0, y: 1, z: 0 }, right: { x: 0, y: 0, z: -1 } },
+            { center: { x: 0, y: 1, z: 0 }, up: { x: 0, y: 0, z: 1 }, right: { x: 1, y: 0, z: 0 } },
+            { center: { x: 0, y: -1, z: 0 }, up: { x: 0, y: 0, z: 1 }, right: { x: -1, y: 0, z: 0 } },
+            { center: { x: 0, y: 0, z: 1 }, up: { x: 0, y: 1, z: 0 }, right: { x: -1, y: 0, z: 0 } },
+            { center: { x: 0, y: 0, z: -1 }, up: { x: 0, y: 1, z: 0 }, right: { x: 1, y: 0, z: 0 } }
+        ];
+
+        const pointsPerFace = Math.floor(n / 6);
+        const sqrtPoints = Math.ceil(Math.sqrt(pointsPerFace));
+
+        faces.forEach(face => {
+            for (let i = 0; i < sqrtPoints; i++) {
+                for (let j = 0; j < sqrtPoints; j++) {
+                    if (points.length >= n) return;
+
+                    const u = (i + 0.5) / sqrtPoints * 2 - 1;
+                    const v = (j + 0.5) / sqrtPoints * 2 - 1;
+                    
+                    // Add some controlled randomness for better distribution
+                    const randU = u + (Math.random() - 0.5) * 0.1;
+                    const randV = v + (Math.random() - 0.5) * 0.1;
+
+                    const point = {
+                        x: face.center.x + randU * face.right.x + randV * face.up.x,
+                        y: face.center.y + randU * face.right.y + randV * face.up.y,
+                        z: face.center.z + randU * face.right.z + randV * face.up.z
+                    };
+
+                    // Apply vertex weight and edge flow
+                    const weightedPoint = normalize(point);
+                    const edgeInfluence = Math.pow(Math.max(Math.abs(u), Math.abs(v)), edgeFlow);
+                    const finalPoint = {
+                        x: weightedPoint.x * (1 - vertexWeight) + point.x * vertexWeight * edgeInfluence,
+                        y: weightedPoint.y * (1 - vertexWeight) + point.y * vertexWeight * edgeInfluence,
+                        z: weightedPoint.z * (1 - vertexWeight) + point.z * vertexWeight * edgeInfluence
+                    };
+
+                    points.push(normalize(finalPoint));
+                }
+            }
+        });
+        return points;
+    };
+    
+    switch(group) {
+        case 'A3': // A3 group (tetrahedral symmetries)
+            // Use fibonacci sphere distribution with slight jitter for more natural look
+            return fibonacciSphere(n, 0.1);
+            
+        case 'B3': // B3 group (cubic symmetries)
+            const orbInstance = orbs[currentOrbIndex];
+            const vertexWeight = orbInstance.cubicVertexWeight || 0.5;
+            const edgeFlow = orbInstance.cubicEdgeFlow || 1.0;
+            
+            return generateCubeFacePoints(n, vertexWeight, edgeFlow);
+            
+        case 'H3': // H3 group (icosahedral symmetries)
+            const orb = orbs[currentOrbIndex];
+            const phi = (1 + Math.sqrt(5)) / 2 * (orb.goldenRatioWeight || 1.618);
+            const vertexFlow = orb.icoVertexFlow || 1.0;
+            const faceWeight = orb.icoFaceWeight || 0.5;
+
+            // Generate icosahedron vertices
+            const vertices = [];
+            for (let i = 0; i < 12; i++) {
+                const isUpper = i < 6;
+                const t = (i % 6) * Math.PI * 2 / 5;
+                const r = isUpper ? 1 : phi;
+                const y = isUpper ? phi : 1/phi;
+                vertices.push(normalize({
+                    x: Math.cos(t) * r,
+                    y: y,
+                    z: Math.sin(t) * r
+                }));
+            }
+
+            // Use fibonacci sphere as base distribution
+            const basePoints = fibonacciSphere(n, 0.05);
+            
+            // Transform points based on icosahedral symmetry
+            return basePoints.map(point => {
+                // Find nearest vertices
+                const distances = vertices.map(v => 
+                    Math.sqrt((v.x - point.x) ** 2 + (v.y - point.y) ** 2 + (v.z - point.z) ** 2)
+                );
+                const nearest = vertices[distances.indexOf(Math.min(...distances))];
+                
+                // Apply vertex flow and face weight
+                const morphed = {
+                    x: point.x * (1 - vertexFlow) + nearest.x * vertexFlow,
+                    y: point.y * (1 - vertexFlow) + nearest.y * vertexFlow,
+                    z: point.z * (1 - vertexFlow) + nearest.z * vertexFlow
+                };
+                
+                return normalize({
+                    x: morphed.x * (1 - faceWeight) + point.x * faceWeight,
+                    y: morphed.y * (1 - faceWeight) + point.y * faceWeight,
+                    z: morphed.z * (1 - faceWeight) + point.z * faceWeight
+                });
+            });
+            
+        default:
+            return fibonacciSphere(n, 0.1); // Default to A3 with slight jitter
+    }
+}
+
+// Modified buildDotsForOrb to support Coxeter patterns
 function buildDotsForOrb(orbInstance, numDots) {
   const n = numDots || orbInstance.dotCount;
-  orbInstance.dotCount = n; // Ensure orbInstance's dotCount is updated
+  orbInstance.dotCount = n;
   orbInstance.dotTheta = [];
   orbInstance.dotPhi = [];
-  const ga = Math.PI * (3 - Math.sqrt(5)); // Golden angle
-  for (let i = 0; i < n; i++) {
-    let yPos = 1 - (i / (n - 1)) * 2;
-    let radius = Math.sqrt(1 - yPos * yPos);
-    let phi = ga * i;
-    orbInstance.dotTheta.push(Math.acos(yPos));
-    orbInstance.dotPhi.push(phi % (2 * Math.PI));
+  
+  if (orbInstance.patternType === 'coxeter') {
+      // Generate root system based on selected Coxeter group
+      const roots = generateRootSystem(orbInstance.coxeterGroup, n);
+      roots.forEach(root => {
+          orbInstance.dotTheta.push(Math.acos(root.z));
+          orbInstance.dotPhi.push(Math.atan2(root.y, root.x));
+      });
+  } else {
+      // Original Lissajous pattern generation
+      const ga = Math.PI * (3 - Math.sqrt(5));
+      for (let i = 0; i < n; i++) {
+          let yPos = 1 - (i / (n - 1)) * 2;
+          let radius = Math.sqrt(1 - yPos * yPos);
+          let phi = ga * i;
+          orbInstance.dotTheta.push(Math.acos(yPos));
+          orbInstance.dotPhi.push(phi % (2 * Math.PI));
+      }
   }
 }
 
@@ -537,10 +870,44 @@ function animate(timestamp) {
     for (let i = 0; i < orb.dotCount; i++) {
       if (i >= orb.dotTheta.length) break; // Safety for dynamic dotCount changes
 
-      let phase = t * orb.patternSpeed;
-      let theta = (orb.amplX * Math.acos(Math.cos(orb.dotTheta[i] * orb.freqX + orb.phaseX + phase)));
-      let phi = (orb.freqY * orb.dotPhi[i] + orb.phaseY + phase + orb.amplY * Math.sin(orb.dotTheta[i] * orb.freqZ + orb.phaseZ + phase));
-      
+      let phase = t * (orb.patternType === 'coxeter' ? orb.coxeterSpeed : orb.patternSpeed);
+      let theta, phi;
+
+      if (orb.patternType === 'coxeter') {
+        // Coxeter pattern animation
+        const baseTheta = orb.dotTheta[i];
+        const basePhi = orb.dotPhi[i];
+        
+        // Convert from spherical to cartesian coordinates
+        let x = Math.sin(baseTheta) * Math.cos(basePhi);
+        let y = Math.sin(baseTheta) * Math.sin(basePhi);
+        let z = Math.cos(baseTheta);
+        
+        // Apply rotations while maintaining the unit sphere constraint
+        const rotX = phase * 0.5;
+        const rotY = phase * 0.7;
+        const rotZ = phase * 0.3 + orb.rootRotation;
+        
+        // Apply rotations in sequence
+        let point = rotatePoint(x, y, z, rotX, 'x');
+        point = rotatePoint(point.x, point.y, point.z, rotY, 'y');
+        point = rotatePoint(point.x, point.y, point.z, rotZ, 'z');
+        
+        // Scale by amplitude while maintaining spherical distribution
+        const r = orb.coxeterAmplitude;
+        point.x *= r;
+        point.y *= r;
+        point.z *= r;
+        
+        // Convert back to spherical coordinates
+        theta = Math.acos(point.z / r);
+        phi = Math.atan2(point.y, point.x);
+      } else {
+        // Original Lissajous pattern
+        theta = (orb.amplX * Math.acos(Math.cos(orb.dotTheta[i] * orb.freqX + orb.phaseX + phase)));
+        phi = (orb.freqY * orb.dotPhi[i] + orb.phaseY + phase + orb.amplY * Math.sin(orb.dotTheta[i] * orb.freqZ + orb.phaseZ + phase));
+      }
+
       let sinTh = Math.sin(theta), cosTh = Math.cos(theta), sinPh = Math.sin(phi), cosPh = Math.cos(phi);
       let x = sinTh * cosPh;
       let y = sinTh * sinPh;
@@ -743,23 +1110,15 @@ function generateShareableURL() {
     const sceneState = getSceneState();
     try {
         const jsonString = JSON.stringify(sceneState);
-        const encodedData = btoa(jsonString);
+        const encodedData = btoa(jsonString); // Base64 encode
         
-        // For GitHub Pages deployments, get the repository name from the pathname
-        let baseUrl;
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            baseUrl = window.location.href.split('?')[0]; // Local development
-        } else {
-            // For GitHub Pages
-            const pathParts = window.location.pathname.split('/');
-            const repoName = pathParts[1]; // The repository name is the first part of the path
-            baseUrl = `${window.location.origin}/${repoName}/`;
-        }
-        
+        // For GitHub Pages, construct the URL based on the current location
+        // This handles both local development and GitHub Pages deployment
+        const baseUrl = window.location.href.split('?')[0]; // Remove any existing query parameters
         return `${baseUrl}?scene=${encodeURIComponent(encodedData)}`;
     } catch (e) {
         console.error("Error generating share URL:", e);
-        return window.location.href.split('?')[0]; // Fallback without query params
+        return window.location.href.split('?')[0]; // Fallback to current URL without query params
     }
 }
 
@@ -925,4 +1284,31 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
     init();
+}
+
+// Helper function for 3D rotations
+function rotatePoint(x, y, z, angle, axis) {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    
+    switch(axis) {
+        case 'x':
+            return {
+                x: x,
+                y: y * cos - z * sin,
+                z: y * sin + z * cos
+            };
+        case 'y':
+            return {
+                x: x * cos + z * sin,
+                y: y,
+                z: -x * sin + z * cos
+            };
+        case 'z':
+            return {
+                x: x * cos - y * sin,
+                y: x * sin + y * cos,
+                z: z
+            };
+    }
 }
