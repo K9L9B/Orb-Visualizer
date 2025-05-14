@@ -373,10 +373,8 @@ window.addEventListener('resize', resizeCanvas, { passive: true });
 
 function resetView() {
   rotX = 0; rotY = 0; cameraZoom = 1.0;
-  // Reset global view controls to default
-  globalAutoRotate = true;
+  // Reset only the rotation speed, maintain current auto-rotate state
   globalAutoRotateSpeed = 0.027;
-  dom('globalAutoRotate').checked = globalAutoRotate;
   dom('globalAutoRotateSpeed').value = globalAutoRotateSpeed;
   dom('globalAutoRotateSpeedNum').value = globalAutoRotateSpeed;
   updateSliderDisplay('globalAutoRotateSpeed', globalAutoRotateSpeed, 3);
