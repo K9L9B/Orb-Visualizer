@@ -735,9 +735,32 @@ function getSceneState() {
         view: {
             globalAutoRotate: globalAutoRotate,
             globalAutoRotateSpeed: globalAutoRotateSpeed,
-            // rotX, rotY, cameraZoom are transient view states, not saved in presets
         }
     };
+}
+
+function generateShareableURL() {
+    const sceneState = getSceneState();
+    try {
+        const jsonString = JSON.stringify(sceneState);
+        const encodedData = btoa(jsonString);
+        
+        // For GitHub Pages deployments, get the repository name from the pathname
+        let baseUrl;
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            baseUrl = window.location.href.split('?')[0]; // Local development
+        } else {
+            // For GitHub Pages
+            const pathParts = window.location.pathname.split('/');
+            const repoName = pathParts[1]; // The repository name is the first part of the path
+            baseUrl = `${window.location.origin}/${repoName}/`;
+        }
+        
+        return `${baseUrl}?scene=${encodeURIComponent(encodedData)}`;
+    } catch (e) {
+        console.error("Error generating share URL:", e);
+        return window.location.href.split('?')[0]; // Fallback without query params
+    }
 }
 
 function applySceneState(sceneState) {
@@ -804,15 +827,17 @@ function populatePresetList() { /* ... (same as before, uses PRESET_PREFIX) ... 
 
 function generateShareableURL() {
     const sceneState = getSceneState();
-    // Compress the state for URL (optional, but good for large states)
-    // For simplicity, direct JSON stringify and base64 encode
     try {
         const jsonString = JSON.stringify(sceneState);
         const encodedData = btoa(jsonString); // Base64 encode
-        return `${window.location.origin}${window.location.pathname}?scene=${encodeURIComponent(encodedData)}`;
+        
+        // For GitHub Pages, construct the URL based on the current location
+        // This handles both local development and GitHub Pages deployment
+        const baseUrl = window.location.href.split('?')[0]; // Remove any existing query parameters
+        return `${baseUrl}?scene=${encodeURIComponent(encodedData)}`;
     } catch (e) {
         console.error("Error generating share URL:", e);
-        return `${window.location.origin}${window.location.pathname}`; // Fallback
+        return window.location.href.split('?')[0]; // Fallback to current URL without query params
     }
 }
 
