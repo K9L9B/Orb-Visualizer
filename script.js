@@ -32,8 +32,8 @@ const ctx = canvas.getContext('2d');
 // Global View parameters
 let cameraZoom = 1.0;
 let rotY = 0, rotX = 0; // Main camera rotation
-let globalAutoRotate = true;
-let globalAutoRotateSpeed = 0.027;
+let globalAutoRotate = false;
+let globalAutoRotateSpeed = 0.02;
 
 // For drag rotation and pinch zoom
 let isDragging = false, lastX, lastY, lastZoom = null, pinchStartDist = null, pinchMode = false;
@@ -46,17 +46,17 @@ let nextOrbId = 1; // For unique IDs for evolution phases
 // Default single orb parameters structure
 const defaultOrbParamsTemplate = {
   id: 0, // Unique ID for each orb
-  perspective: 2.0,
-  dotCount: 1000,
-  dotSize: 4,
+  perspective: 0.5,
+  dotCount: 2000,
+  dotSize: 1,
   dotAlpha: 0.82,
   freqX: 4, freqY: 5, freqZ: 6,
   phaseX: 0, phaseY: 1, phaseZ: 2.6,
-  amplX: 1.10, amplY: 1.08, amplZ: 1.07,
-  patternSpeed: 0.19,
+  amplX: 1, amplY: 1, amplZ: 1,
+  patternSpeed: 0.2,
   trail: false,
-  trailAlpha: 0.17,
-  colorMode: 'solid',
+  trailAlpha: 0.3,
+  colorMode: 'rainbow',
   dotColor1: '#2cffba',
   dotColor2: '#22a7f7',
   // Orb-specific dot data, will be populated by buildDotsForOrb
