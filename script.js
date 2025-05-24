@@ -86,6 +86,11 @@ const defaultOrbParamsTemplate = {
   goldenRatioWeight: 1.618,
   icoVertexFlow: 1.0,
   icoFaceWeight: 0.5,
+  // Bezier curve control points (Option B - global controls)
+  bezierPathLength: 0.5,
+  bezierCtrlOffsetScale: 0.5,
+  bezierPathTwist: 0,
+  bezierAnimSpeedScale: 1.0,
 };
 
 // List of all range/number input pairs for orb parameters
@@ -117,7 +122,12 @@ const orbPairedControls = [
   // H3 (Icosahedral) controls
   { base: 'goldenRatioWeight', digits: 2, type: 'number' },
   { base: 'icoVertexFlow', digits: 2, type: 'number' },
-  { base: 'icoFaceWeight', digits: 2, type: 'number' }
+  { base: 'icoFaceWeight', digits: 2, type: 'number' },
+  // Bezier controls (Option B - global controls)
+  { base: 'bezierPathLength', digits: 2, type: 'number' },
+  { base: 'bezierCtrlOffsetScale', digits: 2, type: 'number' },
+  { base: 'bezierPathTwist', digits: 2, type: 'number' },
+  { base: 'bezierAnimSpeedScale', digits: 1, type: 'number' }
 ];
 
 const orbSingleControls = [ // For checkboxes, selects, colors for orbs
@@ -209,20 +219,29 @@ function setupOrbControlsListeners() {
       numInput.value = this.value;
       updateSliderDisplay(base, this.value, digits);
       syncCurrentOrbParamsFromUI();
-      if (base === 'dotCount') buildDotsForOrb(orbs[currentOrbIndex]);
+      if (base === 'dotCount') {
+        buildDotsForOrb(orbs[currentOrbIndex]);
+      }
+      // For other params like bezier, no need to call buildDotsForOrb on each change here
     });
 
     numInput.addEventListener('input', function () {
       let val = this.value;
       const min = parseFloat(slider.min);
       const max = parseFloat(slider.max);
-      if (parseFloat(val) < min) val = min;
-      if (parseFloat(val) > max) val = max;
-      slider.value = val;
-      this.value = val;
-      updateSliderDisplay(base, val, digits);
-      syncCurrentOrbParamsFromUI();
-      if (base === 'dotCount') buildDotsForOrb(orbs[currentOrbIndex], parseFloat(val));
+      // Allow empty input temporarily for better UX, but cap at min/max on blur
+      if (val !== "" && !isNaN(parseFloat(val))) {
+        if (parseFloat(val) < min) val = min;
+        if (parseFloat(val) > max) val = max;
+      }
+      slider.value = val; // Sync slider even if input is temporarily empty or out of bounds
+      // this.value will be corrected on blur or if it becomes a valid number
+      updateSliderDisplay(base, val, digits); // Display the current input value
+      syncCurrentOrbParamsFromUI(); // Syncs the potentially temporary value
+      if (base === 'dotCount' && val !== "" && !isNaN(parseFloat(val))) {
+        buildDotsForOrb(orbs[currentOrbIndex], parseFloat(val));
+      }
+      // For other params like bezier, no need to call buildDotsForOrb on each change here
     });
     numInput.addEventListener('blur', function () {
         let val = this.value;
@@ -231,10 +250,13 @@ function setupOrbControlsListeners() {
         if (val === "" || isNaN(parseFloat(val)) || parseFloat(val) < min) val = min;
         if (parseFloat(val) > max) val = max;
         slider.value = val;
-        this.value = val;
+        this.value = val; // Correct the input field value
         updateSliderDisplay(base, val, digits);
-        syncCurrentOrbParamsFromUI();
-        if (base === 'dotCount') buildDotsForOrb(orbs[currentOrbIndex], parseFloat(val));
+        syncCurrentOrbParamsFromUI(); // Sync the corrected value
+        if (base === 'dotCount') {
+          buildDotsForOrb(orbs[currentOrbIndex], parseFloat(val));
+        }
+        // For other params like bezier, no need to call buildDotsForOrb on each change here
     });
   });
 
@@ -326,21 +348,36 @@ function setupOrbControlsListeners() {
 
   // Add pattern type control listener
   dom('patternType').addEventListener('change', function() {
-    const isCoxeter = this.value === 'coxeter';
-    dom('coxeterControls').style.display = isCoxeter ? 'block' : 'none';
-    dom('lissajousControls').style.display = isCoxeter ? 'none' : 'block';
-    
-    if (isCoxeter) {
-      const group = dom('coxeterGroup').value;
-      dom('b3Controls').style.display = group === 'B3' ? 'block' : 'none';
-      dom('h3Controls').style.display = group === 'H3' ? 'block' : 'none';
+    const newPatternType = this.value;
+
+    if (newPatternType === 'bezier') {
+        // Set pattern type on orb object *before* setTimeout, so updateUIForOrb (called later) knows about it.
+        orbs[currentOrbIndex].patternType = newPatternType;
+
+        ctx.save();
+        ctx.clearRect(0, 0, W, H); // Clear canvas
+        ctx.font = "bold 24px Roboto, sans-serif";
+        ctx.fillStyle = "#FFFFFF"; // White text for visibility
+        ctx.textAlign = "center";
+        ctx.globalAlpha = 1.0; // Ensure full opacity
+        ctx.fillText("Generating Bezier paths, please wait...", W / 2, H / 2);
+        ctx.restore();
+
+        setTimeout(() => {
+            buildDotsForOrb(orbs[currentOrbIndex]);
+            // updateUIForOrb will be called after this if/else block anyway,
+            // ensuring the UI (sidebar) correctly reflects the state after build.
+        }, 50); // 50ms delay to allow message to render
+    } else {
+        orbs[currentOrbIndex].patternType = newPatternType;
+        // For Lissajous and Coxeter, buildDotsForOrb is relatively fast
+        // and doesn't require a loading message with setTimeout.
+        buildDotsForOrb(orbs[currentOrbIndex]);
     }
     
-    orbs[currentOrbIndex].patternType = this.value;
-    if (isCoxeter) {
-      orbs[currentOrbIndex].coxeterGroup = dom('coxeterGroup').value;
-      buildDotsForOrb(orbs[currentOrbIndex]);
-    }
+    // Update the sidebar controls to show/hide the correct sections for the new pattern type.
+    // This also handles setting specific control values like coxeterGroup if applicable.
+    updateUIForOrb(orbs[currentOrbIndex]);
   });
 
   // Add Coxeter group control listeners
@@ -482,12 +519,13 @@ function updateUIForOrb(orbInstance) {
     // Update pattern type and related controls
     if (orbInstance.patternType) {
         dom('patternType').value = orbInstance.patternType;
-        const isCoxeter = orbInstance.patternType === 'coxeter';
-        dom('coxeterControls').style.display = isCoxeter ? 'block' : 'none';
-        dom('lissajousControls').style.display = isCoxeter ? 'none' : 'block';
+        const patternType = orbInstance.patternType;
 
-        if (isCoxeter) {
-            // Show/hide group-specific controls
+        dom('lissajousControls').style.display = patternType === 'lissajous' ? 'block' : 'none';
+        dom('coxeterControls').style.display = patternType === 'coxeter' ? 'block' : 'none';
+        dom('bezierControls').style.display = patternType === 'bezier' ? 'block' : 'none';
+
+        if (patternType === 'coxeter') {
             const group = orbInstance.coxeterGroup || 'A3';
             dom('coxeterGroup').value = group;
             dom('b3Controls').style.display = group === 'B3' ? 'block' : 'none';
@@ -612,6 +650,47 @@ function lerpColor(c1, c2, t) { /* ... (same as before) ... */ return {r:Math.ro
 function rgbObjToString(c, a = 1) { /* ... (same as before) ... */ return `rgba(${c.r},${c.g},${c.b},${+a})`;}
 function hsvToRgb(h, s, v) { /* ... (same as before) ... */ let f=(n,k=(n+h*6)%6)=>v-v*s*Math.max(Math.min(k,4-k,1),0);return{r:Math.round(f(5)*255),g:Math.round(f(3)*255),b:Math.round(f(1)*255)};}
 
+// Calculate a point on a cubic Bezier curve
+function calculateCubicBezierPoint(p0, p1, p2, p3, t) {
+  const omt = 1 - t; // one minus t
+  const omt3 = omt * omt * omt;       // (1-t)^3
+  const omt2t = omt * omt * t * 3;  // 3*(1-t)^2*t
+  const omtt2 = omt * t * t * 3;    // 3*(1-t)*t^2
+  const t3 = t * t * t;             // t^3
+
+  const x = omt3 * p0.x + omt2t * p1.x + omtt2 * p2.x + t3 * p3.x;
+  const y = omt3 * p0.y + omt2t * p1.y + omtt2 * p2.y + t3 * p3.y;
+  const z = omt3 * p0.z + omt2t * p1.z + omtt2 * p2.z + t3 * p3.z;
+
+  return { x: x, y: y, z: z };
+}
+
+// --- Vector Helper Functions ---
+function vAdd(v1, v2) { return { x: v1.x + v2.x, y: v1.y + v2.y, z: v1.z + v2.z }; }
+function vSub(v1, v2) { return { x: v1.x - v2.x, y: v1.y - v2.y, z: v1.z - v2.z }; }
+function vScale(v, s) { return { x: v.x * s, y: v.y * s, z: v.z * s }; }
+function vLength(v) { return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z); }
+function vNormalize(v) { const l = vLength(v); return l > 0 ? vScale(v, 1 / l) : {x:0,y:0,z:0}; }
+function vCross(v1, v2) {
+    return {
+        x: v1.y * v2.z - v1.z * v2.y,
+        y: v1.z * v2.x - v1.x * v2.z,
+        z: v1.x * v2.y - v1.y * v2.x
+    };
+}
+// Rodrigues' rotation formula: rotates vector v around axis k by angle theta
+function vRotate(v, k, theta) {
+    k = vNormalize(k);
+    const cosTheta = Math.cos(theta);
+    const sinTheta = Math.sin(theta);
+    const vDotK = v.x * k.x + v.y * k.y + v.z * k.z; // Dot product
+
+    const vRot_x = v.x * cosTheta + (k.y * v.z - k.z * v.y) * sinTheta + k.x * vDotK * (1 - cosTheta);
+    const vRot_y = v.y * cosTheta + (k.z * v.x - k.x * v.z) * sinTheta + k.y * vDotK * (1 - cosTheta);
+    const vRot_z = v.z * cosTheta + (k.x * v.y - k.y * v.x) * sinTheta + k.z * vDotK * (1 - cosTheta);
+    return { x: vRot_x, y: vRot_y, z: vRot_z };
+}
+// --- End Vector Helper Functions ---
 
 // Root system generators for different Coxeter groups
 function generateRootSystem(group, n = 1000) {
@@ -767,6 +846,11 @@ function buildDotsForOrb(orbInstance, numDots) {
   orbInstance.dotCount = n;
   orbInstance.dotTheta = [];
   orbInstance.dotPhi = [];
+  // Initialize arrays for Bezier control points if they don't exist
+  orbInstance.dotP0 = [];
+  orbInstance.dotP1 = [];
+  orbInstance.dotP2 = [];
+  orbInstance.dotP3 = [];
   
   if (orbInstance.patternType === 'coxeter') {
       // Generate root system based on selected Coxeter group
@@ -775,8 +859,58 @@ function buildDotsForOrb(orbInstance, numDots) {
           orbInstance.dotTheta.push(Math.acos(root.z));
           orbInstance.dotPhi.push(Math.atan2(root.y, root.x));
       });
+  } else if (orbInstance.patternType === 'bezier') {
+      // 1. Populate dotTheta, dotPhi using Fibonacci sphere first
+      const ga_bezier = Math.PI * (3 - Math.sqrt(5));
+      for (let i = 0; i < n; i++) {
+          let yPos = 1 - (i / (n - 1)) * 2;
+          let radius = Math.sqrt(1 - yPos * yPos);
+          let phi_angle = ga_bezier * i;
+          orbInstance.dotTheta.push(Math.acos(yPos));
+          orbInstance.dotPhi.push(phi_angle % (2 * Math.PI));
+      }
+
+      // 2. Loop to calculate P0, P1, P2, P3 for each dot
+      for (let j = 0; j < n; j++) {
+          const theta = orbInstance.dotTheta[j];
+          const phi = orbInstance.dotPhi[j];
+          const P0 = { 
+              x: Math.sin(theta) * Math.cos(phi), 
+              y: Math.cos(theta), 
+              z: Math.sin(theta) * Math.sin(phi) 
+          };
+          orbInstance.dotP0.push(P0);
+
+          const P3 = vScale(P0, 1 + orbInstance.bezierPathLength);
+          const pathDir = vNormalize(P0); // P0 is on unit sphere
+
+          let up = { x: 0, y: 1, z: 0 };
+          if (Math.abs(pathDir.y) > 0.99) {
+              up = { x: 1, y: 0, z: 0 };
+          }
+
+          let tangent1 = vNormalize(vCross(pathDir, up));
+          if (orbInstance.bezierPathTwist !== 0) {
+              tangent1 = vRotate(tangent1, pathDir, orbInstance.bezierPathTwist);
+          }
+          
+          const offsetVector = vScale(tangent1, orbInstance.bezierCtrlOffsetScale);
+
+          const P1_onPath = vAdd(P0, vScale(pathDir, orbInstance.bezierPathLength * 0.33));
+          const P1 = vAdd(P1_onPath, offsetVector);
+
+          const P2_onPath = vAdd(P0, vScale(pathDir, orbInstance.bezierPathLength * 0.66));
+          const P2 = vAdd(P2_onPath, vScale(offsetVector, -1.0));
+          
+          orbInstance.dotP1.push(P1);
+          orbInstance.dotP2.push(P2);
+          orbInstance.dotP3.push(P3);
+      }
+      // Clear dotTheta and dotPhi as their info is now in P0 (and indirectly P1,P2,P3)
+      orbInstance.dotTheta = [];
+      orbInstance.dotPhi = [];
   } else {
-      // Original Lissajous pattern generation
+      // Original Lissajous pattern generation (default)
       const ga = Math.PI * (3 - Math.sqrt(5));
       for (let i = 0; i < n; i++) {
           let yPos = 1 - (i / (n - 1)) * 2;
@@ -868,53 +1002,71 @@ function animate(timestamp) {
     let orbCenterY = cy + orb.positionY;
 
     for (let i = 0; i < orb.dotCount; i++) {
-      if (i >= orb.dotTheta.length) break; // Safety for dynamic dotCount changes
+      // Updated Safety Check
+      if (orb.patternType === 'bezier') {
+        if (i >= orb.dotP0.length) break; // Check against dotP0 for Bezier
+      } else {
+        if (i >= orb.dotTheta.length) break; // Original check for Lissajous/Coxeter
+      }
 
-      let phase = t * (orb.patternType === 'coxeter' ? orb.coxeterSpeed : orb.patternSpeed);
-      let theta, phi;
+      let currentPatternSpeed = orb.patternType === 'coxeter' ? orb.coxeterSpeed : orb.patternSpeed; // Lissajous and Bezier use orb.patternSpeed
+      let phase = t * currentPatternSpeed; // Used by Lissajous and Coxeter, and for Bezier t_dot
+      let x, y, z; // These will be the coordinates before global rotation and projection
 
-      if (orb.patternType === 'coxeter') {
-        // Coxeter pattern animation
+      if (orb.patternType === 'bezier') {
+          const p0 = orb.dotP0[i];
+          const p1 = orb.dotP1[i];
+          const p2 = orb.dotP2[i];
+          const p3 = orb.dotP3[i];
+
+          if (!p0 || !p1 || !p2 || !p3) continue; // Safety check for per-dot control points
+
+          const effectiveSpeed = orb.patternSpeed * orb.bezierAnimSpeedScale;
+          const timeParamForDot = ( (t * effectiveSpeed) + ( (i / Math.max(1, orb.dotCount)) * Math.PI * 2 ) ) % 1.0;
+          
+          
+          const currentPos = calculateCubicBezierPoint(p0, p1, p2, p3, timeParamForDot);
+          
+          x = currentPos.x;
+          y = currentPos.y;
+          z = currentPos.z;
+          // No explicit / 250.0 scaling here, as P0-P3 are already defined in a relative space.
+      } else if (orb.patternType === 'coxeter') {
         const baseTheta = orb.dotTheta[i];
         const basePhi = orb.dotPhi[i];
         
         // Convert from spherical to cartesian coordinates
-        let x = Math.sin(baseTheta) * Math.cos(basePhi);
-        let y = Math.sin(baseTheta) * Math.sin(basePhi);
-        let z = Math.cos(baseTheta);
+        let cx_ = Math.sin(baseTheta) * Math.cos(basePhi);
+        let cy_ = Math.sin(baseTheta) * Math.sin(basePhi);
+        let cz_ = Math.cos(baseTheta);
         
         // Apply rotations while maintaining the unit sphere constraint
-        const rotX = phase * 0.5;
-        const rotY = phase * 0.7;
-        const rotZ = phase * 0.3 + orb.rootRotation;
+        const rotX_cox = phase * 0.5; // Renamed to avoid conflict with global rotX
+        const rotY_cox = phase * 0.7; // Renamed to avoid conflict with global rotY
+        const rotZ_cox = phase * 0.3 + orb.rootRotation;
         
         // Apply rotations in sequence
-        let point = rotatePoint(x, y, z, rotX, 'x');
-        point = rotatePoint(point.x, point.y, point.z, rotY, 'y');
-        point = rotatePoint(point.x, point.y, point.z, rotZ, 'z');
+        let point = rotatePoint(cx_, cy_, cz_, rotX_cox, 'x');
+        point = rotatePoint(point.x, point.y, point.z, rotY_cox, 'y');
+        point = rotatePoint(point.x, point.y, point.z, rotZ_cox, 'z');
         
-        // Scale by amplitude while maintaining spherical distribution
-        const r = orb.coxeterAmplitude;
-        point.x *= r;
-        point.y *= r;
-        point.z *= r;
+        // Scale by amplitude
+        x = point.x * orb.coxeterAmplitude;
+        y = point.y * orb.coxeterAmplitude;
+        z = point.z * orb.coxeterAmplitude;
+      } else { // Default to Lissajous
+        let theta_liss = (orb.amplX * Math.acos(Math.cos(orb.dotTheta[i] * orb.freqX + orb.phaseX + phase)));
+        let phi_liss = (orb.freqY * orb.dotPhi[i] + orb.phaseY + phase + orb.amplY * Math.sin(orb.dotTheta[i] * orb.freqZ + orb.phaseZ + phase));
         
-        // Convert back to spherical coordinates
-        theta = Math.acos(point.z / r);
-        phi = Math.atan2(point.y, point.x);
-      } else {
-        // Original Lissajous pattern
-        theta = (orb.amplX * Math.acos(Math.cos(orb.dotTheta[i] * orb.freqX + orb.phaseX + phase)));
-        phi = (orb.freqY * orb.dotPhi[i] + orb.phaseY + phase + orb.amplY * Math.sin(orb.dotTheta[i] * orb.freqZ + orb.phaseZ + phase));
+        let sinTh = Math.sin(theta_liss), cosTh = Math.cos(theta_liss);
+        let sinPh = Math.sin(phi_liss), cosPh = Math.cos(phi_liss);
+        x = sinTh * cosPh;
+        y = sinTh * sinPh;
+        z = cosTh * orb.amplZ; 
       }
-
-      let sinTh = Math.sin(theta), cosTh = Math.cos(theta), sinPh = Math.sin(phi), cosPh = Math.cos(phi);
-      let x = sinTh * cosPh;
-      let y = sinTh * sinPh;
-      let z = cosTh * orb.amplZ;
       
       // Apply global camera rotation
-      let x1=x, y1=y, z1=z;
+      let x1=x, y1=y, z1=z; // x,y,z are now from the correct pattern
       let x2 = Math.cos(rotY)*x1 + Math.sin(rotY)*z1;
       let z2 =-Math.sin(rotY)*x1 + Math.cos(rotY)*z1;
       let y2 = Math.cos(rotX)*y1 - Math.sin(rotX)*z2;
@@ -1076,6 +1228,16 @@ function randomizeCurrentOrb() {
 
     // Rebuild dots if dotCount changed (it likely did)
     buildDotsForOrb(orb);
+
+    // If patternType is Bezier, randomize its Option B global parameters
+    if (orb.patternType === 'bezier') {
+        orb.bezierPathLength = getRandomFloat(0.1, 2.0, 2);
+        orb.bezierCtrlOffsetScale = getRandomFloat(0.1, 1.5, 2);
+        orb.bezierPathTwist = getRandomFloat(0, 6.28, 2);
+        orb.bezierAnimSpeedScale = getRandomFloat(0.1, 2.0, 1);
+        // Note: buildDotsForOrb(orb) is called below, which is crucial as it uses these params.
+    }
+
     // Update UI to reflect changes
     updateUIForOrb(orb);
 }
@@ -1123,14 +1285,34 @@ function generateShareableURL() {
 }
 
 function applySceneState(sceneState) {
-    orbs = deepClone(sceneState.orbs || []);
-    if (orbs.length === 0) { // Ensure at least one orb if loaded state is empty
-        addNewOrb();
+    const loadedOrbsData = deepClone(sceneState.orbs || []);
+    orbs = []; // Reset orbs array
+
+    if (loadedOrbsData.length === 0) {
+        addNewOrb(); // Ensure at least one orb if loaded state is empty
     } else {
-        orbs.forEach(orb => {
-            if (!orb.id) orb.id = nextOrbId++; // Assign IDs if missing
-            if (!orb.evolutionInitialPhaseSeed) orb.evolutionInitialPhaseSeed = Math.random() * 100;
-            buildDotsForOrb(orb);
+        loadedOrbsData.forEach(loadedOrbData => {
+            // Merge loaded orb data with defaults to ensure all params are present
+            const mergedOrb = { ...deepClone(defaultOrbParamsTemplate), ...loadedOrbData };
+            
+            // Assign new ID if missing (though presets should have them)
+            // Also, ensure nextOrbId is updated correctly if loading a scene with higher IDs
+            if (!mergedOrb.id) {
+                mergedOrb.id = nextOrbId++;
+            } else {
+                // Ensure ID is a number, as JSON stringification might convert numeric keys if not careful
+                mergedOrb.id = parseInt(mergedOrb.id, 10); 
+                if (mergedOrb.id >= nextOrbId) {
+                    nextOrbId = mergedOrb.id + 1;
+                }
+            }
+
+            if (!mergedOrb.evolutionInitialPhaseSeed) {
+                mergedOrb.evolutionInitialPhaseSeed = Math.random() * 100;
+            }
+            
+            buildDotsForOrb(mergedOrb);
+            orbs.push(mergedOrb);
         });
     }
     
